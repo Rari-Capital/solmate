@@ -91,7 +91,7 @@ contract ERC4626Test is DSTestPlus {
         assertEq(underlying.balanceOf(address(alice)), alicePreDepositBal - aliceUnderlyingAmount);
 
         alice.redeem(aliceShareAmount, address(alice), address(alice));
-        assertEq(vault.beforeWithdrawHookCalledCounter(), 1);
+        assertEq(vault.beforeRedeemHookCalledCounter(), 1);
 
         assertEq(vault.totalAssets(), 0);
         assertEq(vault.balanceOf(address(alice)), 0);

@@ -6,7 +6,9 @@ import {ERC4626} from "../../../mixins/ERC4626.sol";
 
 contract MockERC4626 is ERC4626 {
     uint256 public beforeWithdrawHookCalledCounter = 0;
+    uint256 public beforeRedeemHookCalledCounter = 0;
     uint256 public afterDepositHookCalledCounter = 0;
+    uint256 public afterMintHookCalledCounter = 0;
 
     constructor(
         ERC20 _underlying,
@@ -22,7 +24,15 @@ contract MockERC4626 is ERC4626 {
         beforeWithdrawHookCalledCounter++;
     }
 
+    function beforeRedeem(uint256, uint256) internal override {
+        beforeRedeemHookCalledCounter++;
+    }
+
     function afterDeposit(uint256, uint256) internal override {
+        afterDepositHookCalledCounter++;
+    }
+
+    function afterMint(uint256, uint256) internal override {
         afterDepositHookCalledCounter++;
     }
 }

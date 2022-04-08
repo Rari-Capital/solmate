@@ -67,7 +67,7 @@ abstract contract ERC4626 is ERC20 {
 
         emit Deposit(msg.sender, receiver, assets, shares);
 
-        afterDeposit(assets, shares);
+        afterMint(assets, shares);
     }
 
     function withdraw(
@@ -106,7 +106,7 @@ abstract contract ERC4626 is ERC20 {
         // Check for rounding error since we round down in previewRedeem.
         require((assets = previewRedeem(shares)) != 0, "ZERO_ASSETS");
 
-        beforeWithdraw(assets, shares);
+        beforeRedeem(assets, shares);
 
         _burn(owner, shares);
 
@@ -179,5 +179,9 @@ abstract contract ERC4626 is ERC20 {
 
     function beforeWithdraw(uint256 assets, uint256 shares) internal virtual {}
 
+    function beforeRedeem(uint256 assets, uint256 shares) internal virtual {}
+
     function afterDeposit(uint256 assets, uint256 shares) internal virtual {}
+
+    function afterMint(uint256 assets, uint256 shares) internal virtual {}
 }
