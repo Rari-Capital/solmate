@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity >=0.8.0;
 
+
+
 /// @notice Provides a flexible and updatable auth pattern which is completely separate from application logic.
 /// @author Solmate (https://github.com/Rari-Capital/solmate/blob/main/src/auth/Auth.sol)
 /// @author Modified from Dappsys (https://github.com/dapphub/ds-auth/blob/master/src/auth.sol)
@@ -38,7 +40,8 @@ abstract contract Auth {
     function setAuthority(Authority newAuthority) public virtual {
         // We check if the caller is the owner first because we want to ensure they can
         // always swap out the authority even if it's reverting or using up a lot of gas.
-        require(msg.sender == owner || authority.canCall(msg.sender, address(this), msg.sig));
+        // Using the `selector` directly instead of the `msg.sig` value results in reduced gas cost.
+        require(msg.sender == owner || authority.canCall(msg.sender, address(this), IAuth.setAuthority.selector));
 
         authority = newAuthority;
 
@@ -50,6 +53,12 @@ abstract contract Auth {
 
         emit OwnerUpdated(msg.sender, newOwner);
     }
+}
+
+/// @notice A purpose-built interface to expose the `setAuthority` function selector.
+/// @author Solmate
+interface IAuth {
+    function setAuthority(Authority newAuthority) external;
 }
 
 /// @notice A generic interface for a contract which provides authorization data to an Auth instance.
