@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity 0.8.10;
 
-import {DSTestPlus} from "./utils/DSTestPlus.sol";
+import {TestPlus} from "./utils/TestPlus.sol";
 
-contract DSTestPlusTest is DSTestPlus {
+contract TestPlusTest is TestPlus {
     function testBound() public {
         assertEq(bound(5, 0, 4), 0);
         assertEq(bound(0, 69, 69), 69);
@@ -13,7 +13,8 @@ contract DSTestPlusTest is DSTestPlus {
         assertEq(bound(9999, 1337, 6666), 4669);
     }
 
-    function testFailBoundMinBiggerThanMax() public {
+    function testBoundMinBiggerThanMax() public {
+        vm.expectRevert("MAX_LESS_THAN_MIN");
         bound(5, 100, 10);
     }
 
@@ -35,7 +36,7 @@ contract DSTestPlusTest is DSTestPlus {
         assertLe(bounded, max);
     }
 
-    function testFailBoundMinBiggerThanMax(
+    function testBoundMinBiggerThanMax(
         uint256 num,
         uint256 min,
         uint256 max
@@ -48,6 +49,7 @@ contract DSTestPlusTest is DSTestPlus {
 
         if (max > min) (min, max) = (max, min);
 
+        vm.expectRevert("MAX_LESS_THAN_MIN");
         bound(num, min, max);
     }
 }

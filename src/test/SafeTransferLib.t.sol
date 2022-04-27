@@ -10,12 +10,12 @@ import {ReturnsTooMuchToken} from "./utils/weird-tokens/ReturnsTooMuchToken.sol"
 import {ReturnsGarbageToken} from "./utils/weird-tokens/ReturnsGarbageToken.sol";
 import {ReturnsTooLittleToken} from "./utils/weird-tokens/ReturnsTooLittleToken.sol";
 
-import {DSTestPlus} from "./utils/DSTestPlus.sol";
+import {TestPlus} from "./utils/TestPlus.sol";
 
 import {ERC20} from "../tokens/ERC20.sol";
 import {SafeTransferLib} from "../utils/SafeTransferLib.sol";
 
-contract SafeTransferLibTest is DSTestPlus {
+contract SafeTransferLibTest is TestPlus {
     RevertingToken reverting;
     ReturnsTwoToken returnsTwo;
     ReturnsFalseToken returnsFalse;
@@ -520,7 +520,7 @@ contract SafeTransferLibTest is DSTestPlus {
     ) internal {
         uint256 slot = token == address(erc20) ? 4 : 2; // Standard ERC20 name and symbol aren't constant.
 
-        hevm.store(
+        vm.store(
             token,
             keccak256(abi.encode(to, keccak256(abi.encode(from, uint256(slot))))),
             bytes32(uint256(amount))

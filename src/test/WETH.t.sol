@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity 0.8.10;
 
-import {DSTestPlus} from "./utils/DSTestPlus.sol";
+import {TestPlus} from "./utils/TestPlus.sol";
 import {DSInvariantTest} from "./utils/DSInvariantTest.sol";
 
 import {SafeTransferLib} from "../utils/SafeTransferLib.sol";
 
 import {WETH} from "../tokens/WETH.sol";
 
-contract WETHTest is DSTestPlus {
+contract WETHTest is TestPlus {
     WETH weth;
 
     function setUp() public {
@@ -107,7 +107,7 @@ contract WETHTest is DSTestPlus {
     receive() external payable {}
 }
 
-contract WETHInvariants is DSTestPlus, DSInvariantTest {
+contract WETHInvariants is TestPlus, DSInvariantTest {
     WETHTester wethTester;
     WETH weth;
 

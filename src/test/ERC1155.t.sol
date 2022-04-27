@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity 0.8.10;
 
-import {DSTestPlus} from "./utils/DSTestPlus.sol";
+import "forge-std/Test.sol";
+import {TestPlus} from "./utils/TestPlus.sol";
 import {DSInvariantTest} from "./utils/DSInvariantTest.sol";
 
 import {MockERC1155} from "./utils/mocks/MockERC1155.sol";
@@ -108,7 +109,7 @@ contract WrongReturnDataERC1155Recipient is ERC1155TokenReceiver {
 
 contract NonERC1155Recipient {}
 
-contract ERC1155Test is DSTestPlus, ERC1155TokenReceiver {
+contract ERC1155Test is TestPlus, ERC1155TokenReceiver {
     MockERC1155 token;
 
     mapping(address => mapping(uint256 => uint256)) public userMintAmounts;
@@ -245,7 +246,7 @@ contract ERC1155Test is DSTestPlus, ERC1155TokenReceiver {
 
         token.mint(from, 1337, 100, "");
 
-        hevm.prank(from);
+        vm.prank(from);
         token.setApprovalForAll(address(this), true);
 
         token.safeTransferFrom(from, address(0xBEEF), 1337, 70, "");
@@ -261,7 +262,7 @@ contract ERC1155Test is DSTestPlus, ERC1155TokenReceiver {
 
         token.mint(from, 1337, 100, "");
 
-        hevm.prank(from);
+        vm.prank(from);
         token.setApprovalForAll(address(this), true);
 
         token.safeTransferFrom(from, address(to), 1337, 70, "testing 123");
@@ -310,7 +311,7 @@ contract ERC1155Test is DSTestPlus, ERC1155TokenReceiver {
 
         token.batchMint(from, ids, mintAmounts, "");
 
-        hevm.prank(from);
+        vm.prank(from);
         token.setApprovalForAll(address(this), true);
 
         token.safeBatchTransferFrom(from, address(0xBEEF), ids, transferAmounts, "");
@@ -359,7 +360,7 @@ contract ERC1155Test is DSTestPlus, ERC1155TokenReceiver {
 
         token.batchMint(from, ids, mintAmounts, "");
 
-        hevm.prank(from);
+        vm.prank(from);
         token.setApprovalForAll(address(this), true);
 
         token.safeBatchTransferFrom(from, address(to), ids, transferAmounts, "testing 123");
@@ -416,51 +417,62 @@ contract ERC1155Test is DSTestPlus, ERC1155TokenReceiver {
         assertEq(balances[4], 500);
     }
 
-    function testFailMintToZero() public {
+    function testMintToZero() public {
+        vm.expectRevert("UNSAFE_RECIPIENT");
         token.mint(address(0), 1337, 1, "");
     }
 
-    function testFailMintToNonERC155Recipient() public {
-        token.mint(address(new NonERC1155Recipient()), 1337, 1, "");
+    function testMintToNonERC155Recipient() public {
+        address to = address(new NonERC1155Recipient());
+        vm.expectRevert();
+        token.mint(to, 1337, 1, "");
     }
 
     function testFailMintToRevertingERC155Recipient() public {
-        token.mint(address(new RevertingERC1155Recipient()), 1337, 1, "");
+        address to = address(new RevertingERC1155Recipient());
+        token.mint(to, 1337, 1, "");
     }
 
     function testFailMintToWrongReturnDataERC155Recipient() public {
-        token.mint(address(new RevertingERC1155Recipient()), 1337, 1, "");
+        address to = address(new RevertingERC1155Recipient());
+        token.mint(to, 1337, 1, "");
     }
 
-    function testFailBurnInsufficientBalance() public {
+    function testBurnInsufficientBalance() public {
         token.mint(address(0xBEEF), 1337, 70, "");
+        vm.expectRevert(stdError.arithmeticError);
         token.burn(address(0xBEEF), 1337, 100);
     }
 
-    function testFailSafeTransferFromInsufficientBalance() public {
+    function testSafeTransferFromInsufficientBalance() public {
         address from = address(0xABCD);
 
         token.mint(from, 1337, 70, "");
 
-        hevm.prank(from);
+        vm.prank(from);
         token.setApprovalForAll(address(this), true);
 
+        vm.expectRevert(stdError.arithmeticError);
         token.safeTransferFrom(from, address(0xBEEF), 1337, 100, "");
     }
 
-    function testFailSafeTransferFromSelfInsufficientBalance() public {
+    function testSafeTransferFromSelfInsufficientBalance() public {
         token.mint(address(this), 1337, 70, "");
+        vm.expectRevert(stdError.arithmeticError);
         token.safeTransferFrom(address(this), address(0xBEEF), 1337, 100, "");
     }
 
-    function testFailSafeTransferFromToZero() public {
+    function testSafeTransferFromToZero() public {
         token.mint(address(this), 1337, 100, "");
+        vm.expectRevert("UNSAFE_RECIPIENT");
         token.safeTransferFrom(address(this), address(0), 1337, 70, "");
     }
 
-    function testFailSafeTransferFromToNonERC155Recipient() public {
+    function testSafeTransferFromToNonERC155Recipient() public {
         token.mint(address(this), 1337, 100, "");
-        token.safeTransferFrom(address(this), address(new NonERC1155Recipient()), 1337, 70, "");
+        address recipient = address(new NonERC1155Recipient());
+        vm.expectRevert();
+        token.safeTransferFrom(address(this), recipient, 1337, 70, "");
     }
 
     function testFailSafeTransferFromToRevertingERC1155Recipient() public {
@@ -468,12 +480,14 @@ contract ERC1155Test is DSTestPlus, ERC1155TokenReceiver {
         token.safeTransferFrom(address(this), address(new RevertingERC1155Recipient()), 1337, 70, "");
     }
 
-    function testFailSafeTransferFromToWrongReturnDataERC1155Recipient() public {
+    function testSafeTransferFromToWrongReturnDataERC1155Recipient() public {
         token.mint(address(this), 1337, 100, "");
-        token.safeTransferFrom(address(this), address(new WrongReturnDataERC1155Recipient()), 1337, 70, "");
+        address recipient = address(new WrongReturnDataERC1155Recipient());
+        vm.expectRevert("UNSAFE_RECIPIENT");
+        token.safeTransferFrom(address(this), recipient, 1337, 70, "");
     }
 
-    function testFailSafeBatchTransferInsufficientBalance() public {
+    function testSafeBatchTransferInsufficientBalance() public {
         address from = address(0xABCD);
 
         uint256[] memory ids = new uint256[](5);
@@ -500,13 +514,14 @@ contract ERC1155Test is DSTestPlus, ERC1155TokenReceiver {
 
         token.batchMint(from, ids, mintAmounts, "");
 
-        hevm.prank(from);
+        vm.prank(from);
         token.setApprovalForAll(address(this), true);
 
+        vm.expectRevert(stdError.arithmeticError);
         token.safeBatchTransferFrom(from, address(0xBEEF), ids, transferAmounts, "");
     }
 
-    function testFailSafeBatchTransferFromToZero() public {
+    function testSafeBatchTransferFromToZero() public {
         address from = address(0xABCD);
 
         uint256[] memory ids = new uint256[](5);
@@ -532,13 +547,14 @@ contract ERC1155Test is DSTestPlus, ERC1155TokenReceiver {
 
         token.batchMint(from, ids, mintAmounts, "");
 
-        hevm.prank(from);
+        vm.prank(from);
         token.setApprovalForAll(address(this), true);
 
+        vm.expectRevert("UNSAFE_RECIPIENT");
         token.safeBatchTransferFrom(from, address(0), ids, transferAmounts, "");
     }
 
-    function testFailSafeBatchTransferFromToNonERC1155Recipient() public {
+    function testSafeBatchTransferFromToNonERC1155Recipient() public {
         address from = address(0xABCD);
 
         uint256[] memory ids = new uint256[](5);
@@ -564,10 +580,13 @@ contract ERC1155Test is DSTestPlus, ERC1155TokenReceiver {
 
         token.batchMint(from, ids, mintAmounts, "");
 
-        hevm.prank(from);
+        vm.prank(from);
         token.setApprovalForAll(address(this), true);
 
-        token.safeBatchTransferFrom(from, address(new NonERC1155Recipient()), ids, transferAmounts, "");
+        address recipient = address(new NonERC1155Recipient());
+
+        vm.expectRevert();
+        token.safeBatchTransferFrom(from, recipient, ids, transferAmounts, "");
     }
 
     function testFailSafeBatchTransferFromToRevertingERC1155Recipient() public {
@@ -596,13 +615,13 @@ contract ERC1155Test is DSTestPlus, ERC1155TokenReceiver {
 
         token.batchMint(from, ids, mintAmounts, "");
 
-        hevm.prank(from);
+        vm.prank(from);
         token.setApprovalForAll(address(this), true);
 
         token.safeBatchTransferFrom(from, address(new RevertingERC1155Recipient()), ids, transferAmounts, "");
     }
 
-    function testFailSafeBatchTransferFromToWrongReturnDataERC1155Recipient() public {
+    function testSafeBatchTransferFromToWrongReturnDataERC1155Recipient() public {
         address from = address(0xABCD);
 
         uint256[] memory ids = new uint256[](5);
@@ -628,13 +647,16 @@ contract ERC1155Test is DSTestPlus, ERC1155TokenReceiver {
 
         token.batchMint(from, ids, mintAmounts, "");
 
-        hevm.prank(from);
+        vm.prank(from);
         token.setApprovalForAll(address(this), true);
 
-        token.safeBatchTransferFrom(from, address(new WrongReturnDataERC1155Recipient()), ids, transferAmounts, "");
+        address recipient = address(new WrongReturnDataERC1155Recipient());
+
+        vm.expectRevert("UNSAFE_RECIPIENT");
+        token.safeBatchTransferFrom(from, recipient, ids, transferAmounts, "");
     }
 
-    function testFailSafeBatchTransferFromWithArrayLengthMismatch() public {
+    function testSafeBatchTransferFromWithArrayLengthMismatch() public {
         address from = address(0xABCD);
 
         uint256[] memory ids = new uint256[](5);
@@ -659,13 +681,14 @@ contract ERC1155Test is DSTestPlus, ERC1155TokenReceiver {
 
         token.batchMint(from, ids, mintAmounts, "");
 
-        hevm.prank(from);
+        vm.prank(from);
         token.setApprovalForAll(address(this), true);
 
+        vm.expectRevert("LENGTH_MISMATCH");
         token.safeBatchTransferFrom(from, address(0xBEEF), ids, transferAmounts, "");
     }
 
-    function testFailBatchMintToZero() public {
+    function testBatchMintToZero() public {
         uint256[] memory ids = new uint256[](5);
         ids[0] = 1337;
         ids[1] = 1338;
@@ -680,10 +703,11 @@ contract ERC1155Test is DSTestPlus, ERC1155TokenReceiver {
         mintAmounts[3] = 400;
         mintAmounts[4] = 500;
 
+        vm.expectRevert("UNSAFE_RECIPIENT");
         token.batchMint(address(0), ids, mintAmounts, "");
     }
 
-    function testFailBatchMintToNonERC1155Recipient() public {
+    function testBatchMintToNonERC1155Recipient() public {
         NonERC1155Recipient to = new NonERC1155Recipient();
 
         uint256[] memory ids = new uint256[](5);
@@ -700,6 +724,7 @@ contract ERC1155Test is DSTestPlus, ERC1155TokenReceiver {
         mintAmounts[3] = 400;
         mintAmounts[4] = 500;
 
+        vm.expectRevert();
         token.batchMint(address(to), ids, mintAmounts, "");
     }
 
@@ -723,7 +748,7 @@ contract ERC1155Test is DSTestPlus, ERC1155TokenReceiver {
         token.batchMint(address(to), ids, mintAmounts, "");
     }
 
-    function testFailBatchMintToWrongReturnDataERC1155Recipient() public {
+    function testBatchMintToWrongReturnDataERC1155Recipient() public {
         WrongReturnDataERC1155Recipient to = new WrongReturnDataERC1155Recipient();
 
         uint256[] memory ids = new uint256[](5);
@@ -740,10 +765,11 @@ contract ERC1155Test is DSTestPlus, ERC1155TokenReceiver {
         mintAmounts[3] = 400;
         mintAmounts[4] = 500;
 
+        vm.expectRevert("UNSAFE_RECIPIENT");
         token.batchMint(address(to), ids, mintAmounts, "");
     }
 
-    function testFailBatchMintWithArrayMismatch() public {
+    function testBatchMintWithArrayMismatch() public {
         uint256[] memory ids = new uint256[](5);
         ids[0] = 1337;
         ids[1] = 1338;
@@ -757,10 +783,11 @@ contract ERC1155Test is DSTestPlus, ERC1155TokenReceiver {
         amounts[2] = 300;
         amounts[3] = 400;
 
+        vm.expectRevert("LENGTH_MISMATCH");
         token.batchMint(address(0xBEEF), ids, amounts, "");
     }
 
-    function testFailBatchBurnInsufficientBalance() public {
+    function testBatchBurnInsufficientBalance() public {
         uint256[] memory ids = new uint256[](5);
         ids[0] = 1337;
         ids[1] = 1338;
@@ -784,10 +811,11 @@ contract ERC1155Test is DSTestPlus, ERC1155TokenReceiver {
 
         token.batchMint(address(0xBEEF), ids, mintAmounts, "");
 
+        vm.expectRevert(stdError.arithmeticError);
         token.batchBurn(address(0xBEEF), ids, burnAmounts);
     }
 
-    function testFailBatchBurnWithArrayLengthMismatch() public {
+    function testBatchBurnWithArrayLengthMismatch() public {
         uint256[] memory ids = new uint256[](5);
         ids[0] = 1337;
         ids[1] = 1338;
@@ -810,10 +838,11 @@ contract ERC1155Test is DSTestPlus, ERC1155TokenReceiver {
 
         token.batchMint(address(0xBEEF), ids, mintAmounts, "");
 
+        vm.expectRevert("LENGTH_MISMATCH");
         token.batchBurn(address(0xBEEF), ids, burnAmounts);
     }
 
-    function testFailBalanceOfBatchWithArrayMismatch() public view {
+    function testBalanceOfBatchWithArrayMismatch() public {
         address[] memory tos = new address[](5);
         tos[0] = address(0xBEEF);
         tos[1] = address(0xCAFE);
@@ -827,6 +856,7 @@ contract ERC1155Test is DSTestPlus, ERC1155TokenReceiver {
         ids[2] = 1339;
         ids[3] = 1340;
 
+        vm.expectRevert("LENGTH_MISMATCH");
         token.balanceOfBatch(tos, ids);
     }
 
@@ -838,7 +868,8 @@ contract ERC1155Test is DSTestPlus, ERC1155TokenReceiver {
     ) public {
         if (to == address(0)) to = address(0xBEEF);
 
-        if (uint256(uint160(to)) <= 18 || to.code.length > 0) return;
+        vm.assume(uint256(uint160(to)) > 18);
+        vm.assume(to.code.length == 0);
 
         token.mint(to, id, amount, mintData);
 
@@ -870,7 +901,8 @@ contract ERC1155Test is DSTestPlus, ERC1155TokenReceiver {
     ) public {
         if (to == address(0)) to = address(0xBEEF);
 
-        if (uint256(uint160(to)) <= 18 || to.code.length > 0) return;
+        vm.assume(uint256(uint160(to)) > 18);
+        vm.assume(to.code.length == 0);
 
         uint256 minLength = min2(ids.length, amounts.length);
 
@@ -948,7 +980,8 @@ contract ERC1155Test is DSTestPlus, ERC1155TokenReceiver {
     ) public {
         if (to == address(0)) to = address(0xBEEF);
 
-        if (uint256(uint160(to)) <= 18 || to.code.length > 0) return;
+        vm.assume(uint256(uint160(to)) > 18);
+        vm.assume(to.code.length == 0);
 
         burnAmount = bound(burnAmount, 0, mintAmount);
 
@@ -968,7 +1001,8 @@ contract ERC1155Test is DSTestPlus, ERC1155TokenReceiver {
     ) public {
         if (to == address(0)) to = address(0xBEEF);
 
-        if (uint256(uint160(to)) <= 18 || to.code.length > 0) return;
+        vm.assume(uint256(uint160(to)) > 18);
+        vm.assume(to.code.length == 0);
 
         uint256 minLength = min3(ids.length, mintAmounts.length, burnAmounts.length);
 
@@ -1016,7 +1050,8 @@ contract ERC1155Test is DSTestPlus, ERC1155TokenReceiver {
     ) public {
         if (to == address(0)) to = address(0xBEEF);
 
-        if (uint256(uint160(to)) <= 18 || to.code.length > 0) return;
+        vm.assume(uint256(uint160(to)) > 18);
+        vm.assume(to.code.length == 0);
 
         transferAmount = bound(transferAmount, 0, mintAmount);
 
@@ -1024,7 +1059,7 @@ contract ERC1155Test is DSTestPlus, ERC1155TokenReceiver {
 
         token.mint(from, id, mintAmount, mintData);
 
-        hevm.prank(from);
+        vm.prank(from);
         token.setApprovalForAll(address(this), true);
 
         token.safeTransferFrom(from, to, id, transferAmount, transferData);
@@ -1048,7 +1083,7 @@ contract ERC1155Test is DSTestPlus, ERC1155TokenReceiver {
 
         token.mint(from, id, mintAmount, mintData);
 
-        hevm.prank(from);
+        vm.prank(from);
         token.setApprovalForAll(address(this), true);
 
         token.safeTransferFrom(from, address(to), id, transferAmount, transferData);
@@ -1072,7 +1107,8 @@ contract ERC1155Test is DSTestPlus, ERC1155TokenReceiver {
     ) public {
         if (to == address(0)) to = address(0xBEEF);
 
-        if (uint256(uint160(to)) <= 18 || to.code.length > 0) return;
+        vm.assume(uint256(uint160(to)) > 18);
+        vm.assume(to.code.length == 0);
 
         transferAmount = bound(transferAmount, 0, mintAmount);
 
@@ -1092,11 +1128,11 @@ contract ERC1155Test is DSTestPlus, ERC1155TokenReceiver {
         bytes memory mintData,
         bytes memory transferData
     ) public {
-        if (to == address(0)) to = address(0xBEEF);
-
-        if (uint256(uint160(to)) <= 18 || to.code.length > 0) return;
-
         address from = address(0xABCD);
+        if (to == address(0) || to == from) to = address(0xBEEF);
+
+        vm.assume(uint256(uint160(to)) > 18);
+        vm.assume(to.code.length == 0);
 
         uint256 minLength = min3(ids.length, mintAmounts.length, transferAmounts.length);
 
@@ -1122,7 +1158,7 @@ contract ERC1155Test is DSTestPlus, ERC1155TokenReceiver {
 
         token.batchMint(from, normalizedIds, normalizedMintAmounts, mintData);
 
-        hevm.prank(from);
+        vm.prank(from);
         token.setApprovalForAll(address(this), true);
 
         token.safeBatchTransferFrom(from, to, normalizedIds, normalizedTransferAmounts, transferData);
@@ -1170,7 +1206,7 @@ contract ERC1155Test is DSTestPlus, ERC1155TokenReceiver {
 
         token.batchMint(from, normalizedIds, normalizedMintAmounts, mintData);
 
-        hevm.prank(from);
+        vm.prank(from);
         token.setApprovalForAll(address(this), true);
 
         token.safeBatchTransferFrom(from, address(to), normalizedIds, normalizedTransferAmounts, transferData);
@@ -1224,20 +1260,25 @@ contract ERC1155Test is DSTestPlus, ERC1155TokenReceiver {
         }
     }
 
-    function testFailMintToZero(
+    function testMintToZero(
         uint256 id,
         uint256 amount,
         bytes memory data
     ) public {
+        vm.expectRevert("UNSAFE_RECIPIENT");
         token.mint(address(0), id, amount, data);
     }
 
-    function testFailMintToNonERC155Recipient(
+    function testMintToNonERC155Recipient(
         uint256 id,
         uint256 mintAmount,
         bytes memory mintData
     ) public {
-        token.mint(address(new NonERC1155Recipient()), id, mintAmount, mintData);
+        id = bound(id, 1, type(uint256).max);
+        mintAmount = bound(mintAmount, 1, type(uint256).max);
+        address recipient = address(new NonERC1155Recipient());
+        vm.expectRevert();
+        token.mint(recipient, id, mintAmount, mintData);
     }
 
     function testFailMintToRevertingERC155Recipient(
@@ -1248,28 +1289,33 @@ contract ERC1155Test is DSTestPlus, ERC1155TokenReceiver {
         token.mint(address(new RevertingERC1155Recipient()), id, mintAmount, mintData);
     }
 
-    function testFailMintToWrongReturnDataERC155Recipient(
+    function testMintToWrongReturnDataERC155Recipient(
         uint256 id,
         uint256 mintAmount,
         bytes memory mintData
     ) public {
-        token.mint(address(new RevertingERC1155Recipient()), id, mintAmount, mintData);
+        address recipient = address(new WrongReturnDataERC1155Recipient());
+        vm.expectRevert("UNSAFE_RECIPIENT");
+        token.mint(recipient, id, mintAmount, mintData);
     }
 
-    function testFailBurnInsufficientBalance(
+    function testBurnInsufficientBalance(
         address to,
         uint256 id,
         uint256 mintAmount,
         uint256 burnAmount,
         bytes memory mintData
     ) public {
+        if (to == address(0)) to = address(0xDEAD);
+        mintAmount = bound(mintAmount, 0, type(uint256).max - 1);
         burnAmount = bound(burnAmount, mintAmount + 1, type(uint256).max);
 
         token.mint(to, id, mintAmount, mintData);
+        vm.expectRevert(stdError.arithmeticError);
         token.burn(to, id, burnAmount);
     }
 
-    function testFailSafeTransferFromInsufficientBalance(
+    function testSafeTransferFromInsufficientBalance(
         address to,
         uint256 id,
         uint256 mintAmount,
@@ -1278,18 +1324,21 @@ contract ERC1155Test is DSTestPlus, ERC1155TokenReceiver {
         bytes memory transferData
     ) public {
         address from = address(0xABCD);
+        if (to == address(0) || to == from) to = address(0xDEAD);
 
+        mintAmount = bound(mintAmount, 0, type(uint256).max - 1);
         transferAmount = bound(transferAmount, mintAmount + 1, type(uint256).max);
 
         token.mint(from, id, mintAmount, mintData);
 
-        hevm.prank(from);
+        vm.prank(from);
         token.setApprovalForAll(address(this), true);
 
+        vm.expectRevert(stdError.arithmeticError);
         token.safeTransferFrom(from, to, id, transferAmount, transferData);
     }
 
-    function testFailSafeTransferFromSelfInsufficientBalance(
+    function testSafeTransferFromSelfInsufficientBalance(
         address to,
         uint256 id,
         uint256 mintAmount,
@@ -1297,13 +1346,16 @@ contract ERC1155Test is DSTestPlus, ERC1155TokenReceiver {
         bytes memory mintData,
         bytes memory transferData
     ) public {
+        if (to == address(0)) to = address(0xDEAD);
+        mintAmount = bound(mintAmount, 0, type(uint256).max - 1);
         transferAmount = bound(transferAmount, mintAmount + 1, type(uint256).max);
 
         token.mint(address(this), id, mintAmount, mintData);
+        vm.expectRevert(stdError.arithmeticError);
         token.safeTransferFrom(address(this), to, id, transferAmount, transferData);
     }
 
-    function testFailSafeTransferFromToZero(
+    function testSafeTransferFromToZero(
         uint256 id,
         uint256 mintAmount,
         uint256 transferAmount,
@@ -1313,10 +1365,11 @@ contract ERC1155Test is DSTestPlus, ERC1155TokenReceiver {
         transferAmount = bound(transferAmount, 0, mintAmount);
 
         token.mint(address(this), id, mintAmount, mintData);
+        vm.expectRevert("UNSAFE_RECIPIENT");
         token.safeTransferFrom(address(this), address(0), id, transferAmount, transferData);
     }
 
-    function testFailSafeTransferFromToNonERC155Recipient(
+    function testSafeTransferFromToNonERC155Recipient(
         uint256 id,
         uint256 mintAmount,
         uint256 transferAmount,
@@ -1326,7 +1379,9 @@ contract ERC1155Test is DSTestPlus, ERC1155TokenReceiver {
         transferAmount = bound(transferAmount, 0, mintAmount);
 
         token.mint(address(this), id, mintAmount, mintData);
-        token.safeTransferFrom(address(this), address(new NonERC1155Recipient()), id, transferAmount, transferData);
+        address recipient = address(new NonERC1155Recipient());
+        vm.expectRevert();
+        token.safeTransferFrom(address(this), recipient, id, transferAmount, transferData);
     }
 
     function testFailSafeTransferFromToRevertingERC1155Recipient(
@@ -1348,7 +1403,7 @@ contract ERC1155Test is DSTestPlus, ERC1155TokenReceiver {
         );
     }
 
-    function testFailSafeTransferFromToWrongReturnDataERC1155Recipient(
+    function testSafeTransferFromToWrongReturnDataERC1155Recipient(
         uint256 id,
         uint256 mintAmount,
         uint256 transferAmount,
@@ -1358,16 +1413,12 @@ contract ERC1155Test is DSTestPlus, ERC1155TokenReceiver {
         transferAmount = bound(transferAmount, 0, mintAmount);
 
         token.mint(address(this), id, mintAmount, mintData);
-        token.safeTransferFrom(
-            address(this),
-            address(new WrongReturnDataERC1155Recipient()),
-            id,
-            transferAmount,
-            transferData
-        );
+        address recipient = address(new WrongReturnDataERC1155Recipient());
+        vm.expectRevert("UNSAFE_RECIPIENT");
+        token.safeTransferFrom(address(this), recipient, id, transferAmount, transferData);
     }
 
-    function testFailSafeBatchTransferInsufficientBalance(
+    function testSafeBatchTransferInsufficientBalance(
         address to,
         uint256[] memory ids,
         uint256[] memory mintAmounts,
@@ -1379,7 +1430,9 @@ contract ERC1155Test is DSTestPlus, ERC1155TokenReceiver {
 
         uint256 minLength = min3(ids.length, mintAmounts.length, transferAmounts.length);
 
-        if (minLength == 0) revert();
+        vm.assume(minLength != 0);
+
+        if (to == address(0) || to == from) to = address(0xDEAD);
 
         uint256[] memory normalizedIds = new uint256[](minLength);
         uint256[] memory normalizedMintAmounts = new uint256[](minLength);
@@ -1388,7 +1441,7 @@ contract ERC1155Test is DSTestPlus, ERC1155TokenReceiver {
         for (uint256 i = 0; i < minLength; i++) {
             uint256 id = ids[i];
 
-            uint256 remainingMintAmountForId = type(uint256).max - userMintAmounts[from][id];
+            uint256 remainingMintAmountForId = type(uint256).max - userMintAmounts[from][id] - 1;
 
             uint256 mintAmount = bound(mintAmounts[i], 0, remainingMintAmountForId);
             uint256 transferAmount = bound(transferAmounts[i], mintAmount + 1, type(uint256).max);
@@ -1402,13 +1455,14 @@ contract ERC1155Test is DSTestPlus, ERC1155TokenReceiver {
 
         token.batchMint(from, normalizedIds, normalizedMintAmounts, mintData);
 
-        hevm.prank(from);
+        vm.prank(from);
         token.setApprovalForAll(address(this), true);
 
+        vm.expectRevert(stdError.arithmeticError);
         token.safeBatchTransferFrom(from, to, normalizedIds, normalizedTransferAmounts, transferData);
     }
 
-    function testFailSafeBatchTransferFromToZero(
+    function testSafeBatchTransferFromToZero(
         uint256[] memory ids,
         uint256[] memory mintAmounts,
         uint256[] memory transferAmounts,
@@ -1440,13 +1494,14 @@ contract ERC1155Test is DSTestPlus, ERC1155TokenReceiver {
 
         token.batchMint(from, normalizedIds, normalizedMintAmounts, mintData);
 
-        hevm.prank(from);
+        vm.prank(from);
         token.setApprovalForAll(address(this), true);
 
+        vm.expectRevert("UNSAFE_RECIPIENT");
         token.safeBatchTransferFrom(from, address(0), normalizedIds, normalizedTransferAmounts, transferData);
     }
 
-    function testFailSafeBatchTransferFromToNonERC1155Recipient(
+    function testSafeBatchTransferFromToNonERC1155Recipient(
         uint256[] memory ids,
         uint256[] memory mintAmounts,
         uint256[] memory transferAmounts,
@@ -1456,6 +1511,7 @@ contract ERC1155Test is DSTestPlus, ERC1155TokenReceiver {
         address from = address(0xABCD);
 
         uint256 minLength = min3(ids.length, mintAmounts.length, transferAmounts.length);
+        vm.assume(minLength != 0);
 
         uint256[] memory normalizedIds = new uint256[](minLength);
         uint256[] memory normalizedMintAmounts = new uint256[](minLength);
@@ -1478,16 +1534,13 @@ contract ERC1155Test is DSTestPlus, ERC1155TokenReceiver {
 
         token.batchMint(from, normalizedIds, normalizedMintAmounts, mintData);
 
-        hevm.prank(from);
+        vm.prank(from);
         token.setApprovalForAll(address(this), true);
 
-        token.safeBatchTransferFrom(
-            from,
-            address(new NonERC1155Recipient()),
-            normalizedIds,
-            normalizedTransferAmounts,
-            transferData
-        );
+        address recipient = address(new NonERC1155Recipient());
+
+        vm.expectRevert();
+        token.safeBatchTransferFrom(from, recipient, normalizedIds, normalizedTransferAmounts, transferData);
     }
 
     function testFailSafeBatchTransferFromToRevertingERC1155Recipient(
@@ -1522,7 +1575,7 @@ contract ERC1155Test is DSTestPlus, ERC1155TokenReceiver {
 
         token.batchMint(from, normalizedIds, normalizedMintAmounts, mintData);
 
-        hevm.prank(from);
+        vm.prank(from);
         token.setApprovalForAll(address(this), true);
 
         token.safeBatchTransferFrom(
@@ -1534,7 +1587,7 @@ contract ERC1155Test is DSTestPlus, ERC1155TokenReceiver {
         );
     }
 
-    function testFailSafeBatchTransferFromToWrongReturnDataERC1155Recipient(
+    function testSafeBatchTransferFromToWrongReturnDataERC1155Recipient(
         uint256[] memory ids,
         uint256[] memory mintAmounts,
         uint256[] memory transferAmounts,
@@ -1544,6 +1597,7 @@ contract ERC1155Test is DSTestPlus, ERC1155TokenReceiver {
         address from = address(0xABCD);
 
         uint256 minLength = min3(ids.length, mintAmounts.length, transferAmounts.length);
+        vm.assume(minLength != 0);
 
         uint256[] memory normalizedIds = new uint256[](minLength);
         uint256[] memory normalizedMintAmounts = new uint256[](minLength);
@@ -1566,16 +1620,13 @@ contract ERC1155Test is DSTestPlus, ERC1155TokenReceiver {
 
         token.batchMint(from, normalizedIds, normalizedMintAmounts, mintData);
 
-        hevm.prank(from);
+        vm.prank(from);
         token.setApprovalForAll(address(this), true);
 
-        token.safeBatchTransferFrom(
-            from,
-            address(new WrongReturnDataERC1155Recipient()),
-            normalizedIds,
-            normalizedTransferAmounts,
-            transferData
-        );
+        address recipient = address(new WrongReturnDataERC1155Recipient());
+
+        vm.expectRevert("UNSAFE_RECIPIENT");
+        token.safeBatchTransferFrom(from, recipient, normalizedIds, normalizedTransferAmounts, transferData);
     }
 
     function testFailSafeBatchTransferFromWithArrayLengthMismatch(
@@ -1588,22 +1639,26 @@ contract ERC1155Test is DSTestPlus, ERC1155TokenReceiver {
     ) public {
         address from = address(0xABCD);
 
-        if (ids.length == transferAmounts.length) revert();
+        if (to == address(0) || to == from) to = address(0xDEAD);
+
+        if (ids.length <= transferAmounts.length) revert();
+        if (ids.length != mintAmounts.length) revert();
 
         token.batchMint(from, ids, mintAmounts, mintData);
 
-        hevm.prank(from);
+        vm.prank(from);
         token.setApprovalForAll(address(this), true);
 
         token.safeBatchTransferFrom(from, to, ids, transferAmounts, transferData);
     }
 
-    function testFailBatchMintToZero(
+    function testBatchMintToZero(
         uint256[] memory ids,
         uint256[] memory amounts,
         bytes memory mintData
     ) public {
         uint256 minLength = min2(ids.length, amounts.length);
+        vm.assume(minLength != 0);
 
         uint256[] memory normalizedIds = new uint256[](minLength);
         uint256[] memory normalizedAmounts = new uint256[](minLength);
@@ -1621,10 +1676,11 @@ contract ERC1155Test is DSTestPlus, ERC1155TokenReceiver {
             userMintAmounts[address(0)][id] += mintAmount;
         }
 
+        vm.expectRevert("UNSAFE_RECIPIENT");
         token.batchMint(address(0), normalizedIds, normalizedAmounts, mintData);
     }
 
-    function testFailBatchMintToNonERC1155Recipient(
+    function testBatchMintToNonERC1155Recipient(
         uint256[] memory ids,
         uint256[] memory amounts,
         bytes memory mintData
@@ -1632,6 +1688,7 @@ contract ERC1155Test is DSTestPlus, ERC1155TokenReceiver {
         NonERC1155Recipient to = new NonERC1155Recipient();
 
         uint256 minLength = min2(ids.length, amounts.length);
+        vm.assume(minLength != 0);
 
         uint256[] memory normalizedIds = new uint256[](minLength);
         uint256[] memory normalizedAmounts = new uint256[](minLength);
@@ -1649,6 +1706,7 @@ contract ERC1155Test is DSTestPlus, ERC1155TokenReceiver {
             userMintAmounts[address(to)][id] += mintAmount;
         }
 
+        vm.expectRevert();
         token.batchMint(address(to), normalizedIds, normalizedAmounts, mintData);
     }
 
@@ -1680,7 +1738,7 @@ contract ERC1155Test is DSTestPlus, ERC1155TokenReceiver {
         token.batchMint(address(to), normalizedIds, normalizedAmounts, mintData);
     }
 
-    function testFailBatchMintToWrongReturnDataERC1155Recipient(
+    function testBatchMintToWrongReturnDataERC1155Recipient(
         uint256[] memory ids,
         uint256[] memory amounts,
         bytes memory mintData
@@ -1688,6 +1746,7 @@ contract ERC1155Test is DSTestPlus, ERC1155TokenReceiver {
         WrongReturnDataERC1155Recipient to = new WrongReturnDataERC1155Recipient();
 
         uint256 minLength = min2(ids.length, amounts.length);
+        vm.assume(minLength != 0);
 
         uint256[] memory normalizedIds = new uint256[](minLength);
         uint256[] memory normalizedAmounts = new uint256[](minLength);
@@ -1705,21 +1764,24 @@ contract ERC1155Test is DSTestPlus, ERC1155TokenReceiver {
             userMintAmounts[address(to)][id] += mintAmount;
         }
 
+        vm.expectRevert("UNSAFE_RECIPIENT");
         token.batchMint(address(to), normalizedIds, normalizedAmounts, mintData);
     }
 
-    function testFailBatchMintWithArrayMismatch(
+    function testBatchMintWithArrayMismatch(
         address to,
         uint256[] memory ids,
         uint256[] memory amounts,
         bytes memory mintData
     ) public {
-        if (ids.length == amounts.length) revert();
+        vm.assume(ids.length != amounts.length);
+        if (to == address(0)) to = address(0xDEAD);
 
+        vm.expectRevert("LENGTH_MISMATCH");
         token.batchMint(address(to), ids, amounts, mintData);
     }
 
-    function testFailBatchBurnInsufficientBalance(
+    function testBatchBurnInsufficientBalance(
         address to,
         uint256[] memory ids,
         uint256[] memory mintAmounts,
@@ -1728,7 +1790,8 @@ contract ERC1155Test is DSTestPlus, ERC1155TokenReceiver {
     ) public {
         uint256 minLength = min3(ids.length, mintAmounts.length, burnAmounts.length);
 
-        if (minLength == 0) revert();
+        vm.assume(minLength != 0);
+        if (to == address(0)) to = address(0xDEAD);
 
         uint256[] memory normalizedIds = new uint256[](minLength);
         uint256[] memory normalizedMintAmounts = new uint256[](minLength);
@@ -1737,7 +1800,7 @@ contract ERC1155Test is DSTestPlus, ERC1155TokenReceiver {
         for (uint256 i = 0; i < minLength; i++) {
             uint256 id = ids[i];
 
-            uint256 remainingMintAmountForId = type(uint256).max - userMintAmounts[to][id];
+            uint256 remainingMintAmountForId = type(uint256).max - userMintAmounts[to][id] - 1;
 
             normalizedIds[i] = id;
             normalizedMintAmounts[i] = bound(mintAmounts[i], 0, remainingMintAmountForId);
@@ -1748,6 +1811,7 @@ contract ERC1155Test is DSTestPlus, ERC1155TokenReceiver {
 
         token.batchMint(to, normalizedIds, normalizedMintAmounts, mintData);
 
+        vm.expectRevert(stdError.arithmeticError);
         token.batchBurn(to, normalizedIds, normalizedBurnAmounts);
     }
 
@@ -1758,16 +1822,25 @@ contract ERC1155Test is DSTestPlus, ERC1155TokenReceiver {
         uint256[] memory burnAmounts,
         bytes memory mintData
     ) public {
+        if (to == address(0)) to = address(0xDEAD);
         if (ids.length == burnAmounts.length) revert();
+        if (ids.length != mintAmounts.length) revert();
 
         token.batchMint(to, ids, mintAmounts, mintData);
 
         token.batchBurn(to, ids, burnAmounts);
     }
 
-    function testFailBalanceOfBatchWithArrayMismatch(address[] memory tos, uint256[] memory ids) public view {
-        if (tos.length == ids.length) revert();
+    function testBalanceOfBatchWithArrayMismatch(address[] memory tos, uint256[] memory ids) public {
+        vm.assume(tos.length != ids.length);
 
+        for (uint256 i = 0; i < tos.length; i++) {
+            if (tos[i] == address(0)) {
+                tos[i] = address(0xDEAD);
+            }
+        }
+
+        vm.expectRevert("LENGTH_MISMATCH");
         token.balanceOfBatch(tos, ids);
     }
 }

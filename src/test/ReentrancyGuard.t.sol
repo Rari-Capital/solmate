@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity 0.8.10;
 
-import {DSTestPlus} from "./utils/DSTestPlus.sol";
+import {TestPlus} from "./utils/TestPlus.sol";
 
 import {ReentrancyGuard} from "../utils/ReentrancyGuard.sol";
 
@@ -27,7 +27,7 @@ contract RiskyContract is ReentrancyGuard {
     function overprotectedCall() public nonReentrant {}
 }
 
-contract ReentrancyGuardTest is DSTestPlus {
+contract ReentrancyGuardTest is TestPlus {
     RiskyContract riskyContract;
 
     function setUp() public {
@@ -35,19 +35,18 @@ contract ReentrancyGuardTest is DSTestPlus {
     }
 
     function invariantReentrancyStatusAlways1() public {
-        assertEq(uint256(hevm.load(address(riskyContract), 0)), 1);
+        assertEq(uint256(vm.load(address(riskyContract), 0)), 1);
     }
 
-    function testFailUnprotectedCall() public {
+    function testUnprotectedCall() public {
         riskyContract.unprotectedCall();
 
-        assertEq(riskyContract.enterTimes(), 1);
+        assertEq(riskyContract.enterTimes(), 2);
     }
 
     function testProtectedCall() public {
-        try riskyContract.protectedCall() {
-            fail("Reentrancy Guard Failed To Stop Attacker");
-        } catch {}
+        vm.expectRevert("REENTRANCY");
+        riskyContract.protectedCall();
     }
 
     function testNoReentrancy() public {

@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity 0.8.10;
 
-import {DSTestPlus} from "./utils/DSTestPlus.sol";
+import {TestPlus} from "./utils/TestPlus.sol";
 import {MockAuthority} from "./utils/mocks/MockAuthority.sol";
 
 import {Authority} from "../auth/Auth.sol";
 
 import {MultiRolesAuthority} from "../auth/authorities/MultiRolesAuthority.sol";
 
-contract MultiRolesAuthorityTest is DSTestPlus {
+contract MultiRolesAuthorityTest is TestPlus {
     MultiRolesAuthority multiRolesAuthority;
 
     function setUp() public {

@@ -1,15 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity >=0.8.0;
 
-import {DSTest} from "ds-test/test.sol";
-
-import {Hevm} from "./Hevm.sol";
+import "forge-std/Test.sol";
 
 /// @notice Extended testing framework for DappTools projects.
-/// @author Solmate (https://github.com/Rari-Capital/solmate/blob/main/src/test/utils/DSTestPlus.sol)
-contract DSTestPlus is DSTest {
-    Hevm internal constant hevm = Hevm(HEVM_ADDRESS);
-
+/// @author Solmate (https://github.com/Rari-Capital/solmate/blob/main/src/test/utils/TestPlus.sol)
+contract TestPlus is Test {
     address internal constant DEAD_ADDRESS = 0xDeaDbeefdEAdbeefdEadbEEFdeadbeEFdEaDbeeF;
 
     string private checkpointLabel;
@@ -133,6 +129,16 @@ contract DSTestPlus is DSTest {
         if (max == type(uint256).max && x != 0) result++;
 
         emit log_named_uint("Bound Result", result);
+    }
+
+    function bound(
+        uint256[] memory vals,
+        uint256 min,
+        uint256 max
+    ) internal returns (uint256[] memory result) {
+        for (uint256 i = 0; i < vals.length; i++) {
+            result[i] = bound(vals[i], min, max);
+        }
     }
 
     function min3(

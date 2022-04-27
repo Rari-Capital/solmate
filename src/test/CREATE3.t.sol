@@ -2,13 +2,13 @@
 pragma solidity 0.8.10;
 
 import {WETH} from "../tokens/WETH.sol";
-import {DSTestPlus} from "./utils/DSTestPlus.sol";
+import {TestPlus} from "./utils/TestPlus.sol";
 import {MockERC20} from "./utils/mocks/MockERC20.sol";
 import {MockAuthChild} from "./utils/mocks/MockAuthChild.sol";
 
 import {CREATE3} from "../utils/CREATE3.sol";
 
-contract CREATE3Test is DSTestPlus {
+contract CREATE3Test is TestPlus {
     function testDeployERC20() public {
         bytes32 salt = keccak256(bytes("A salt!"));
 
@@ -27,17 +27,19 @@ contract CREATE3Test is DSTestPlus {
         assertEq(deployed.decimals(), 18);
     }
 
-    function testFailDoubleDeploySameBytecode() public {
+    function testDoubleDeploySameBytecode() public {
         bytes32 salt = keccak256(bytes("Salty..."));
 
         CREATE3.deploy(salt, type(MockAuthChild).creationCode, 0);
+        vm.expectRevert("DEPLOYMENT_FAILED");
         CREATE3.deploy(salt, type(MockAuthChild).creationCode, 0);
     }
 
-    function testFailDoubleDeployDifferentBytecode() public {
+    function testDoubleDeployDifferentBytecode() public {
         bytes32 salt = keccak256(bytes("and sweet!"));
 
         CREATE3.deploy(salt, type(WETH).creationCode, 0);
+        vm.expectRevert("DEPLOYMENT_FAILED");
         CREATE3.deploy(salt, type(MockAuthChild).creationCode, 0);
     }
 
