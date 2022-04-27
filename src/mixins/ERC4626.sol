@@ -78,9 +78,10 @@ abstract contract ERC4626 is ERC20 {
         shares = previewWithdraw(assets); // No need to check for rounding error, previewWithdraw rounds up.
 
         if (msg.sender != owner) {
-            uint256 allowed = allowance[owner][msg.sender]; // Saves gas for limited approvals.
+            mapping(address => uint256) storage userAllowances = allowance[owner]; // Saves gas for limited approvals.
+            uint256 allowed = userAllowances[msg.sender]; // Saves gas for limited approvals.
 
-            if (allowed != type(uint256).max) allowance[owner][msg.sender] = allowed - shares;
+            if (allowed != type(uint256).max) userAllowances[msg.sender] = allowed - shares;
         }
 
         beforeWithdraw(assets, shares);
@@ -98,9 +99,10 @@ abstract contract ERC4626 is ERC20 {
         address owner
     ) public virtual returns (uint256 assets) {
         if (msg.sender != owner) {
-            uint256 allowed = allowance[owner][msg.sender]; // Saves gas for limited approvals.
+            mapping(address => uint256) storage userAllowances = allowance[owner]; // Saves gas for limited approvals.
+            uint256 allowed = userAllowances[msg.sender]; // Saves gas for limited approvals.
 
-            if (allowed != type(uint256).max) allowance[owner][msg.sender] = allowed - shares;
+            if (allowed != type(uint256).max) userAllowances[msg.sender] = allowed - shares;
         }
 
         // Check for rounding error since we round down in previewRedeem.
