@@ -161,6 +161,45 @@ contract ERC1155BTest is DSTestPlus, ERC1155TokenReceiver {
         assertEq(token.balanceOf(address(0xBEEF), 1341), 1);
     }
 
+    function testUnsafeMintToEOA() public {
+        token.unsafeMint(address(0xBEEF), 1337, "");
+
+        assertEq(token.balanceOf(address(0xBEEF), 1337), 1);
+    }
+
+    function testUnsafeMintToERC1155Recipient() public {
+        ERC1155BRecipient to = new ERC1155BRecipient();
+
+        token.unsafeMint(address(to), 1337, "testing 123");
+
+        assertEq(token.balanceOf(address(to), 1337), 1);
+    }
+
+    function testUnsafeMintToNonERC1155Recipient() public {
+        NonERC1155BRecipient to = new NonERC1155BRecipient();
+
+        token.unsafeMint(address(to), 1337, "testing 123");
+
+        assertEq(token.balanceOf(address(to), 1337), 1);
+    }
+
+    function testUnsafeBatchMintToEOA() public {
+        uint256[] memory ids = new uint256[](5);
+        ids[0] = 1337;
+        ids[1] = 1338;
+        ids[2] = 1339;
+        ids[3] = 1340;
+        ids[4] = 1341;
+
+        token.unsafeBatchMint(address(0xBEEF), ids, "");
+
+        assertEq(token.balanceOf(address(0xBEEF), 1337), 1);
+        assertEq(token.balanceOf(address(0xBEEF), 1338), 1);
+        assertEq(token.balanceOf(address(0xBEEF), 1339), 1);
+        assertEq(token.balanceOf(address(0xBEEF), 1340), 1);
+        assertEq(token.balanceOf(address(0xBEEF), 1341), 1);
+    }
+
     function testBatchMintToERC1155Recipient() public {
         ERC1155BRecipient to = new ERC1155BRecipient();
 
