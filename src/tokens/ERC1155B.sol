@@ -59,6 +59,28 @@ abstract contract ERC1155B {
     function uri(uint256 id) public view virtual returns (string memory);
 
     /*//////////////////////////////////////////////////////////////
+                              CUSTOM ERRORS
+    //////////////////////////////////////////////////////////////*/
+
+    error NotAuthorized();
+
+    error UnsafeRecipient();
+
+    error InvalidRecipient();
+
+    error InvalidFrom();
+
+    error LengthMismatch();
+
+    error WrongFrom();
+
+    error InvalidAmount();
+
+    error AlreadyMinted();
+
+    error NotMinted();
+
+    /*//////////////////////////////////////////////////////////////
                               ERC1155 LOGIC
     //////////////////////////////////////////////////////////////*/
 
@@ -75,24 +97,21 @@ abstract contract ERC1155B {
         uint256 amount,
         bytes calldata data
     ) public virtual {
-        require(msg.sender == from || isApprovedForAll[from][msg.sender], "NOT_AUTHORIZED");
+        if (msg.sender != from && !isApprovedForAll[from][msg.sender]) { revert NotAuthorized(); }
 
-        require(from == ownerOf[id], "WRONG_FROM"); // Can only transfer from the owner.
+        if (from != ownerOf[id]) { revert WrongFrom(); } // Can only transfer from the owner.
 
         // Can only transfer 1 with ERC1155B.
-        require(amount == 1, "INVALID_AMOUNT");
+        if (amount != 1) { revert InvalidAmount(); }
 
         ownerOf[id] = to;
 
         emit TransferSingle(msg.sender, from, to, id, amount);
 
         if (to.code.length != 0) {
-            require(
-                ERC1155TokenReceiver(to).onERC1155Received(msg.sender, from, id, amount, data) ==
-                    ERC1155TokenReceiver.onERC1155Received.selector,
-                "UNSAFE_RECIPIENT"
-            );
-        } else require(to != address(0), "INVALID_RECIPIENT");
+            if (ERC1155TokenReceiver(to).onERC1155Received(msg.sender, from, id, amount, data) !=
+                ERC1155TokenReceiver.onERC1155Received.selector) { revert UnsafeRecipient(); }
+        } else { if (to == address(0)) { revert InvalidRecipient(); }}
     }
 
     function safeBatchTransferFrom(
@@ -102,9 +121,9 @@ abstract contract ERC1155B {
         uint256[] calldata amounts,
         bytes calldata data
     ) public virtual {
-        require(ids.length == amounts.length, "LENGTH_MISMATCH");
+        if (ids.length != amounts.length) { revert LengthMismatch(); }
 
-        require(msg.sender == from || isApprovedForAll[from][msg.sender], "NOT_AUTHORIZED");
+        if (msg.sender != from && !isApprovedForAll[from][msg.sender]) { revert NotAuthorized(); }
 
         // Storing these outside the loop saves ~15 gas per iteration.
         uint256 id;
@@ -118,10 +137,10 @@ abstract contract ERC1155B {
                 amount = amounts[i];
 
                 // Can only transfer from the owner.
-                require(from == ownerOf[id], "WRONG_FROM");
+                if (from != ownerOf[id]) { revert WrongFrom(); } // Can only transfer from the owner.
 
                 // Can only transfer 1 with ERC1155B.
-                require(amount == 1, "INVALID_AMOUNT");
+                if (amount != 1) { revert InvalidAmount(); }
 
                 ownerOf[id] = to;
             }
@@ -130,12 +149,10 @@ abstract contract ERC1155B {
         emit TransferBatch(msg.sender, from, to, ids, amounts);
 
         if (to.code.length != 0) {
-            require(
-                ERC1155TokenReceiver(to).onERC1155BatchReceived(msg.sender, from, ids, amounts, data) ==
-                    ERC1155TokenReceiver.onERC1155BatchReceived.selector,
-                "UNSAFE_RECIPIENT"
-            );
-        } else require(to != address(0), "INVALID_RECIPIENT");
+            if (
+                ERC1155TokenReceiver(to).onERC1155BatchReceived(msg.sender, from, ids, amounts, data) !=
+                ERC1155TokenReceiver.onERC1155BatchReceived.selector) { revert UnsafeRecipient(); }
+        } else { if (to == address(0)) { revert InvalidRecipient(); }}
     }
 
     function balanceOfBatch(address[] calldata owners, uint256[] calldata ids)
@@ -144,7 +161,7 @@ abstract contract ERC1155B {
         virtual
         returns (uint256[] memory balances)
     {
-        require(owners.length == ids.length, "LENGTH_MISMATCH");
+        if (owners.length != ids.length) { revert LengthMismatch(); }
 
         balances = new uint256[](owners.length);
 
@@ -167,19 +184,16 @@ abstract contract ERC1155B {
         bytes memory data
     ) internal virtual {
         // Minting twice would effectively be a force transfer.
-        require(ownerOf[id] == address(0), "ALREADY_MINTED");
+        if (ownerOf[id] != address(0)) { revert AlreadyMinted(); }
 
         ownerOf[id] = to;
 
         emit TransferSingle(msg.sender, address(0), to, id, 1);
 
         if (to.code.length != 0) {
-            require(
-                ERC1155TokenReceiver(to).onERC1155Received(msg.sender, address(0), id, 1, data) ==
-                    ERC1155TokenReceiver.onERC1155Received.selector,
-                "UNSAFE_RECIPIENT"
-            );
-        } else require(to != address(0), "INVALID_RECIPIENT");
+            if (ERC1155TokenReceiver(to).onERC1155Received(msg.sender, address(0), id, 1, data) !=
+                ERC1155TokenReceiver.onERC1155Received.selector) { revert UnsafeRecipient(); }
+        } else { if (to == address(0)) { revert InvalidRecipient(); }}
     }
 
     function _batchMint(
@@ -201,7 +215,7 @@ abstract contract ERC1155B {
                 id = ids[i];
 
                 // Minting twice would effectively be a force transfer.
-                require(ownerOf[id] == address(0), "ALREADY_MINTED");
+                if (ownerOf[id] != address(0)) { revert AlreadyMinted(); }
 
                 ownerOf[id] = to;
 
@@ -212,17 +226,14 @@ abstract contract ERC1155B {
         emit TransferBatch(msg.sender, address(0), to, ids, amounts);
 
         if (to.code.length != 0) {
-            require(
-                ERC1155TokenReceiver(to).onERC1155BatchReceived(msg.sender, address(0), ids, amounts, data) ==
-                    ERC1155TokenReceiver.onERC1155BatchReceived.selector,
-                "UNSAFE_RECIPIENT"
-            );
-        } else require(to != address(0), "INVALID_RECIPIENT");
+            if (ERC1155TokenReceiver(to).onERC1155BatchReceived(msg.sender, address(0), ids, amounts, data) !=
+                ERC1155TokenReceiver.onERC1155BatchReceived.selector ) { revert UnsafeRecipient(); }
+        } else { if (to == address(0)) { revert InvalidRecipient(); }}
     }
 
     function _batchBurn(address from, uint256[] memory ids) internal virtual {
         // Burning unminted tokens makes no sense.
-        require(from != address(0), "INVALID_FROM");
+        if (from == address(0)) { revert InvalidFrom(); }
 
         uint256 idsLength = ids.length; // Saves MLOADs.
 
@@ -237,7 +248,7 @@ abstract contract ERC1155B {
             for (uint256 i = 0; i < idsLength; ++i) {
                 id = ids[i];
 
-                require(ownerOf[id] == from, "WRONG_FROM");
+                if (ownerOf[id] != from) { revert WrongFrom(); }
 
                 ownerOf[id] = address(0);
 
@@ -251,7 +262,7 @@ abstract contract ERC1155B {
     function _burn(uint256 id) internal virtual {
         address owner = ownerOf[id];
 
-        require(owner != address(0), "NOT_MINTED");
+        if (owner == address(0)) { revert NotMinted(); }
 
         ownerOf[id] = address(0);
 

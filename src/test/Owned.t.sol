@@ -4,6 +4,8 @@ pragma solidity 0.8.10;
 import {DSTestPlus} from "./utils/DSTestPlus.sol";
 import {MockOwned} from "./utils/mocks/MockOwned.sol";
 
+import {Owned} from "../auth/Owned.sol";
+
 contract OwnedTest is DSTestPlus {
     MockOwned mockOwned;
 
@@ -34,7 +36,7 @@ contract OwnedTest is DSTestPlus {
 
         mockOwned.setOwner(owner);
 
-        hevm.expectRevert("UNAUTHORIZED");
+        hevm.expectRevert(Owned.Unauthorized.selector);
         mockOwned.updateFlag();
     }
 }

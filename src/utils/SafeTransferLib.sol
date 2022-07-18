@@ -8,6 +8,18 @@ import {ERC20} from "../tokens/ERC20.sol";
 /// @dev Caution! This library won't check that a token has code, responsibility is delegated to the caller.
 library SafeTransferLib {
     /*//////////////////////////////////////////////////////////////
+                              CUSTOM ERRORS
+    //////////////////////////////////////////////////////////////*/
+
+    error ETHTransferFailed();
+
+    error TransferFailed();
+
+    error TransferFromFailed();
+
+    error ApproveFailed();
+
+    /*//////////////////////////////////////////////////////////////
                              ETH OPERATIONS
     //////////////////////////////////////////////////////////////*/
 
@@ -19,7 +31,7 @@ library SafeTransferLib {
             success := call(gas(), to, amount, 0, 0, 0, 0)
         }
 
-        require(success, "ETH_TRANSFER_FAILED");
+        if (!success) { revert ETHTransferFailed(); }
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -58,7 +70,7 @@ library SafeTransferLib {
             mstore(0x40, memPointer) // Restore the memPointer.
         }
 
-        require(success, "TRANSFER_FROM_FAILED");
+        if (!success) { revert TransferFromFailed(); }
     }
 
     function safeTransfer(
@@ -91,7 +103,7 @@ library SafeTransferLib {
             mstore(0x40, memPointer) // Restore the memPointer.
         }
 
-        require(success, "TRANSFER_FAILED");
+        if (!success) { revert TransferFailed(); }
     }
 
     function safeApprove(
@@ -124,6 +136,6 @@ library SafeTransferLib {
             mstore(0x40, memPointer) // Restore the memPointer.
         }
 
-        require(success, "APPROVE_FAILED");
+        if (!success) { revert ApproveFailed(); }
     }
 }

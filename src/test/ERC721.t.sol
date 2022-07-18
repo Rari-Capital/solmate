@@ -6,7 +6,7 @@ import {DSInvariantTest} from "./utils/DSInvariantTest.sol";
 
 import {MockERC721} from "./utils/mocks/MockERC721.sol";
 
-import {ERC721TokenReceiver} from "../tokens/ERC721.sol";
+import {ERC721TokenReceiver, ERC721} from "../tokens/ERC721.sol";
 
 contract ERC721Recipient is ERC721TokenReceiver {
     address public operator;
@@ -78,7 +78,7 @@ contract ERC721Test is DSTestPlus {
 
         assertEq(token.balanceOf(address(0xBEEF)), 0);
 
-        hevm.expectRevert("NOT_MINTED");
+        hevm.expectRevert(ERC721.NotMinted.selector);
         token.ownerOf(1337);
     }
 
@@ -100,7 +100,7 @@ contract ERC721Test is DSTestPlus {
         assertEq(token.balanceOf(address(this)), 0);
         assertEq(token.getApproved(1337), address(0));
 
-        hevm.expectRevert("NOT_MINTED");
+        hevm.expectRevert(ERC721.NotMinted.selector);
         token.ownerOf(1337);
     }
 
@@ -392,7 +392,7 @@ contract ERC721Test is DSTestPlus {
 
         assertEq(token.balanceOf(to), 0);
 
-        hevm.expectRevert("NOT_MINTED");
+        hevm.expectRevert(ERC721.NotMinted.selector);
         token.ownerOf(id);
     }
 
@@ -416,7 +416,7 @@ contract ERC721Test is DSTestPlus {
         assertEq(token.balanceOf(address(this)), 0);
         assertEq(token.getApproved(id), address(0));
 
-        hevm.expectRevert("NOT_MINTED");
+        hevm.expectRevert(ERC721.NotMinted.selector);
         token.ownerOf(id);
     }
 

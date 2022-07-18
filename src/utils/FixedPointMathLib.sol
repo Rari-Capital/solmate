@@ -4,6 +4,15 @@ pragma solidity >=0.8.0;
 /// @notice Arithmetic library with operations for fixed-point numbers.
 /// @author Solmate (https://github.com/Rari-Capital/solmate/blob/main/src/utils/FixedPointMathLib.sol)
 library FixedPointMathLib {
+
+    /*//////////////////////////////////////////////////////////////
+                              CUSTOM ERRORS
+    //////////////////////////////////////////////////////////////*/
+
+    error ExpOverflow();
+
+    error Undefined();
+
     /*//////////////////////////////////////////////////////////////
                     SIMPLIFIED FIXED POINT OPERATIONS
     //////////////////////////////////////////////////////////////*/
@@ -39,7 +48,7 @@ library FixedPointMathLib {
 
             // When the result is > (2**255 - 1) / 1e18 we can not represent it as an
             // int. This happens when x >= floor(log((2**255 - 1) / 1e18) * 1e18) ~ 135.
-            if (x >= 135305999368893231589) revert("EXP_OVERFLOW");
+            if (x >= 135305999368893231589) revert ExpOverflow();
 
             // x is now in the range (-42, 136) * 1e18. Convert to (-42, 136) * 2**96
             // for more intermediate precision and a binary basis. This base conversion
@@ -91,7 +100,7 @@ library FixedPointMathLib {
 
     function lnWad(int256 x) internal pure returns (int256 r) {
         unchecked {
-            require(x > 0, "UNDEFINED");
+            if (x < 1) revert Undefined();
 
             // We want to convert x from 10**18 fixed point to 2**96 fixed point.
             // We do this by multiplying by 2**96 / 10**18. But since
@@ -350,7 +359,7 @@ library FixedPointMathLib {
     }
 
     function log2(uint256 x) internal pure returns (uint256 r) {
-        require(x > 0, "UNDEFINED");
+        if (x < 1) revert Undefined();
 
         assembly {
             r := shl(7, lt(0xffffffffffffffffffffffffffffffff, x))
