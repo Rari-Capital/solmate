@@ -263,6 +263,49 @@ contract FixedPointMathLibTest is DSTestPlus {
         FixedPointMathLib.mulDivUp(x, y, 0);
     }
 
+    function testMulDiv() public {
+        assertEq(FixedPointMathLib.mulDiv(0, 0, 1), 0);
+        assertEq(FixedPointMathLib.mulDiv(4, 4, 2), 8);
+        assertEq(FixedPointMathLib.mulDiv(2**200, 2**200, 2**200), 2**200);
+    }
+
+    function testMulDivGeneric(uint256 a, uint256 b, uint256 d) public {
+        if (d == 0) return; // TODO: Expect DivideByZero()
+        
+        // Compute a * b in Chinese Remainder Basis
+        uint256 expectedA;
+        uint256 expectedB;
+        unchecked {
+            expectedA = a * b;
+            expectedB = mulmod(a, b, 2**256 - 1);
+        }
+
+        // Construct a * b
+        uint256 prod0; // Least significant 256 bits of the product
+        uint256 prod1; // Most significant 256 bits of the product
+        assembly {
+            let mm := mulmod(a, b, not(0))
+            prod0 := mul(a, b)
+            prod1 := sub(sub(mm, prod0), lt(mm, prod0))
+        }
+        if (prod1 >= d) return; // TODO: Expect Overflow()
+
+
+        uint256 q = FixedPointMathLib.mulDiv(a, b, d);
+        uint256 r = mulmod(a, b, d);
+
+        // Compute q * d + r in Chinese Remainder Basis
+        uint256 actualA;
+        uint256 actualB;
+        unchecked {
+            actualA = q * d + r;
+            actualB = addmod(mulmod(q, d, 2**256 - 1), r, 2**256 - 1);
+        }
+
+        assertEq(actualA, expectedA);
+        assertEq(actualB, expectedB);
+    }
+
     function testSqrt(uint256 x) public {
         uint256 root = FixedPointMathLib.sqrt(x);
         uint256 next = root + 1;
