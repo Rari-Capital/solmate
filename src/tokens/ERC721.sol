@@ -84,28 +84,12 @@ abstract contract ERC721 {
         address to,
         uint256 id
     ) public virtual {
-        require(from == _ownerOf[id], "WRONG_FROM");
-
-        require(to != address(0), "INVALID_RECIPIENT");
-
         require(
             msg.sender == from || isApprovedForAll[from][msg.sender] || msg.sender == getApproved[id],
             "NOT_AUTHORIZED"
         );
 
-        // Underflow of the sender's balance is impossible because we check for
-        // ownership above and the recipient's balance can't realistically overflow.
-        unchecked {
-            _balanceOf[from]--;
-
-            _balanceOf[to]++;
-        }
-
-        _ownerOf[id] = to;
-
-        delete getApproved[id];
-
-        emit Transfer(from, to, id);
+        _transfer(from, to, id);
     }
 
     function safeTransferFrom(
@@ -148,6 +132,34 @@ abstract contract ERC721 {
             interfaceId == 0x01ffc9a7 || // ERC165 Interface ID for ERC165
             interfaceId == 0x80ac58cd || // ERC165 Interface ID for ERC721
             interfaceId == 0x5b5e139f; // ERC165 Interface ID for ERC721Metadata
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                        INTERNAL TRANSFER LOGIC
+    //////////////////////////////////////////////////////////////*/
+
+    function _transfer(
+        address from,
+        address to,
+        uint256 id
+    ) internal virtual {
+        require(from == _ownerOf[id], "WRONG_FROM");
+
+        require(to != address(0), "INVALID_RECIPIENT");
+
+        // Underflow of the sender's balance is impossible because we check for
+        // ownership above and the recipient's balance can't realistically overflow.
+        unchecked {
+            _balanceOf[from]--;
+
+            _balanceOf[to]++;
+        }
+
+        _ownerOf[id] = to;
+
+        delete getApproved[id];
+
+        emit Transfer(from, to, id);
     }
 
     /*//////////////////////////////////////////////////////////////
