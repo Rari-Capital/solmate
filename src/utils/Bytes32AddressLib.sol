@@ -8,6 +8,10 @@ library Bytes32AddressLib {
         return address(uint160(uint256(bytesValue)));
     }
 
+    function fromFirst20Bytes(bytes32 bytesValue) internal pure returns (address) {
+        return address(uint160(bytes20(bytesValue)));
+    }
+
     function fillLast12Bytes(address addressValue) internal pure returns (bytes32) {
         return bytes32(bytes20(addressValue));
     }
