@@ -50,6 +50,11 @@ abstract contract ERC721 {
 
     mapping(address => mapping(address => bool)) public isApprovedForAll;
 
+    function _isApprovedOrOwner(address spender, uint256 id) internal view virtual returns (bool) {
+        address owner = _ownerOf[id];
+        return (spender == owner || getApproved[id] == spender || isApprovedForAll[owner][spender]);
+    }
+
     /*//////////////////////////////////////////////////////////////
                                CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
