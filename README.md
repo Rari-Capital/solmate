@@ -61,6 +61,12 @@ To install with [**Hardhat**](https://github.com/nomiclabs/hardhat) or [**Truffl
 npm install solmate
 ```
 
+Or, if you prefer to use yarn:
+
+```sh
+yarn add solmate
+```
+
 ## Acknowledgements
 
 These contracts were inspired by or directly modified from many sources, primarily:
