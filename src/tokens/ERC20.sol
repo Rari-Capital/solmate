@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity >=0.8.0;
 
-/// @notice Modern and gas efficient ERC20 + EIP-2612 implementation.
+/// @notice Modern and gas efficient ERC20 + ERC2612 implementation.
 /// @author Solmate (https://github.com/transmissions11/solmate/blob/main/src/tokens/ERC20.sol)
 /// @author Modified from Uniswap (https://github.com/Uniswap/uniswap-v2-core/blob/master/contracts/UniswapV2ERC20.sol)
 /// @dev Do not manually set balances without updating totalSupply, as the sum of all user balances must not exceed it.
@@ -35,7 +35,7 @@ abstract contract ERC20 {
     mapping(address => mapping(address => uint256)) public allowance;
 
     /*//////////////////////////////////////////////////////////////
-                            EIP-2612 STORAGE
+                            ERC2612 STORAGE
     //////////////////////////////////////////////////////////////*/
 
     uint256 internal immutable INITIAL_CHAIN_ID;
@@ -110,7 +110,7 @@ abstract contract ERC20 {
     }
 
     /*//////////////////////////////////////////////////////////////
-                             EIP-2612 LOGIC
+                             ERC2612 LOGIC
     //////////////////////////////////////////////////////////////*/
 
     function permit(
