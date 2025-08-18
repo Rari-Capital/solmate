@@ -94,9 +94,10 @@ abstract contract ERC20 {
     ) public virtual returns (bool) {
         uint256 allowed = allowance[from][msg.sender]; // Saves gas for limited approvals.
 
-        if (allowed != type(uint256).max) allowance[from][msg.sender] = allowed - amount;
+        if (allowed != type(uint256).max) {
+         allowance[from][msg.sender] = allowed - amount;
 
-        balanceOf[from] -= amount;
+         balanceOf[from] -= amount;
 
         // Cannot overflow because the sum of all user
         // balances can't exceed the max uint256 value.
