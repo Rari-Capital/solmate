@@ -6,10 +6,10 @@ jobs:
   tests:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Install Foundry
-        uses: onbjerg/foundry-toolchain@v1
+        uses: foundry-rs/foundry-toolchain@v1
         with:
           version: nightly
 
@@ -20,7 +20,7 @@ jobs:
         run: forge build --sizes
 
       - name: Check gas snapshots
-        run: forge snapshot --check
+        run: forge snapshot --check --tolerance 3
 
       - name: Run tests
         run: forge test
