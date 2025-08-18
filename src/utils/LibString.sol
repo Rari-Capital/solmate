@@ -17,11 +17,10 @@ library LibString {
                 // and write the string from right to left in toString(uint256),
                 // and thus can be sure that sub(str, 1) is an unused memory location.
 
-                let length := mload(str) // Load the string length.
-                // Put the - character at the start of the string contents.
-                mstore(str, 45) // 45 is the ASCII code for the - character.
+                let originalStr := str // Save the original pointer before shifting.
                 str := sub(str, 1) // Move back the string pointer by a byte.
-                mstore(str, add(length, 1)) // Update the string length.
+                mstore(originalStr, add(length, 1)) // Update the string length at the original pointer.
+
             }
         }
     }
