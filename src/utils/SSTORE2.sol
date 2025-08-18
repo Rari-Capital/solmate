@@ -24,7 +24,7 @@ library SSTORE2 {
             // 0x81    |  0x81               | DUP2         | codeOffset 0 codeOffset                                        //
             // 0x38    |  0x38               | CODESIZE     | codeSize codeOffset 0 codeOffset                               //
             // 0x03    |  0x03               | SUB          | (codeSize - codeOffset) 0 codeOffset                           //
-            // 0x80    |  0x80               | DUP          | (codeSize - codeOffset) (codeSize - codeOffset) 0 codeOffset   //
+            // 0x80    |  0x80               | DUP1          | (codeSize - codeOffset) (codeSize - codeOffset) 0 codeOffset   //
             // 0x92    |  0x92               | SWAP3        | codeOffset (codeSize - codeOffset) 0 (codeSize - codeOffset)   //
             // 0x59    |  0x59               | MSIZE        | 0 codeOffset (codeSize - codeOffset) 0 (codeSize - codeOffset) //
             // 0x39    |  0x39               | CODECOPY     | 0 (codeSize - codeOffset)                                      //
