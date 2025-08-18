@@ -73,19 +73,22 @@ abstract contract ERC20 {
         return true;
     }
 
-    function transfer(address to, uint256 amount) public virtual returns (bool) {
+   error InsufficientBalance();
+   error TransferToZeroAddress();
+
+    function transfer(address to, uint256 amount) public returns (bool) {
+    if (balanceOf[msg.sender] < amount) revert InsufficientBalance();
+    if (to == address(0)) revert TransferToZeroAddress();
+
+    unchecked {
         balanceOf[msg.sender] -= amount;
-
-        // Cannot overflow because the sum of all user
-        // balances can't exceed the max uint256 value.
-        unchecked {
-            balanceOf[to] += amount;
-        }
-
-        emit Transfer(msg.sender, to, amount);
-
-        return true;
+        balanceOf[to] += amount;
     }
+
+    emit Transfer(msg.sender, to, amount);
+    return true;
+}
+
 
     function transferFrom(
         address from,
