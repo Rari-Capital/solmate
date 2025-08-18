@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-pragma solidity 0.8.15;
+pragma solidity ^0.8.15;
 
 import {WETH} from "../tokens/WETH.sol";
 import {DSTestPlus} from "./utils/DSTestPlus.sol";
