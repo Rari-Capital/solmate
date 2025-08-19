@@ -103,7 +103,9 @@ abstract contract ERC721 {
 
         _ownerOf[id] = to;
 
-        delete getApproved[id];
+        if (getApproved[id] != address(0)) {
+            delete getApproved[id];
+        }
 
         emit Transfer(from, to, id);
     }
