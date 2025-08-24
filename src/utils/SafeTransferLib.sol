@@ -53,7 +53,7 @@ library SafeTransferLib {
             // Set success to whether the call reverted, if not we check it either
             // returned exactly 1 (can't just be non-zero data), or had no return data and token has code.
             if and(iszero(and(eq(mload(0), 1), gt(returndatasize(), 31))), success) {
-                success := iszero(or(iszero(extcodesize(token)), returndatasize())) 
+                success := iszero(or(iszero(extcodesize(token)), returndatasize()))
             }
         }
 
@@ -84,7 +84,7 @@ library SafeTransferLib {
             // Set success to whether the call reverted, if not we check it either
             // returned exactly 1 (can't just be non-zero data), or had no return data and token has code.
             if and(iszero(and(eq(mload(0), 1), gt(returndatasize(), 31))), success) {
-                success := iszero(or(iszero(extcodesize(token)), returndatasize())) 
+                success := iszero(or(iszero(extcodesize(token)), returndatasize()))
             }
         }
 
@@ -115,7 +115,7 @@ library SafeTransferLib {
             // Set success to whether the call reverted, if not we check it either
             // returned exactly 1 (can't just be non-zero data), or had no return data and token has code.
             if and(iszero(and(eq(mload(0), 1), gt(returndatasize(), 31))), success) {
-                success := iszero(or(iszero(extcodesize(token)), returndatasize())) 
+                success := iszero(or(iszero(extcodesize(token)), returndatasize()))
             }
         }
 

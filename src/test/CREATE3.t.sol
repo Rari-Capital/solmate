@@ -40,10 +40,8 @@ contract CREATE3Test is DSTestPlus {
         bytes32 salt = keccak256(bytes("A salt!"));
         Factory factory = new Factory();
 
-        MockERC20 deployed = MockERC20(
-            factory.deploy(salt)
-        );
-    
+        MockERC20 deployed = MockERC20(factory.deploy(salt));
+
         assertEq(address(deployed), CREATE3.getDeployed(salt, address(factory)));
         assertTrue(address(deployed) != CREATE3.getDeployed(salt));
 
