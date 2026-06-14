@@ -58,6 +58,9 @@ interface Hevm {
     /// @notice Sets an address' code.
     function etch(address, bytes calldata) external;
 
+    /// @notice Expects a revert from the next call.
+    function expectRevert() external;
+
     /// @notice Expects an error from the next call.
     function expectRevert(bytes calldata) external;
 

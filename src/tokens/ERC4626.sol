@@ -60,6 +60,8 @@ abstract contract ERC4626 is ERC20 {
     function mint(uint256 shares, address receiver) public virtual returns (uint256 assets) {
         assets = previewMint(shares); // No need to check for rounding error, previewMint rounds up.
 
+        require(assets != 0, "ZERO_ASSETS");
+
         // Need to transfer before minting or ERC777s could reenter.
         asset.safeTransferFrom(msg.sender, address(this), assets);
 

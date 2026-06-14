@@ -42,8 +42,8 @@ library SafeTransferLib {
 
             // Write the abi-encoded calldata into memory, beginning with the function selector.
             mstore(freeMemoryPointer, 0x23b872dd00000000000000000000000000000000000000000000000000000000)
-            mstore(add(freeMemoryPointer, 4), and(from, 0xffffffffffffffffffffffffffffffffffffffff)) // Append and mask the "from" argument.
-            mstore(add(freeMemoryPointer, 36), and(to, 0xffffffffffffffffffffffffffffffffffffffff)) // Append and mask the "to" argument.
+            mstore(add(freeMemoryPointer, 4), from) // Append the "from" argument.
+            mstore(add(freeMemoryPointer, 36), to) // Append the "to" argument.
             mstore(add(freeMemoryPointer, 68), amount) // Append the "amount" argument. Masking not required as it's a full 32 byte type.
 
             // We use 100 because the length of our calldata totals up like so: 4 + 32 * 3.
@@ -74,7 +74,7 @@ library SafeTransferLib {
 
             // Write the abi-encoded calldata into memory, beginning with the function selector.
             mstore(freeMemoryPointer, 0xa9059cbb00000000000000000000000000000000000000000000000000000000)
-            mstore(add(freeMemoryPointer, 4), and(to, 0xffffffffffffffffffffffffffffffffffffffff)) // Append and mask the "to" argument.
+            mstore(add(freeMemoryPointer, 4), to) // Append the "to" argument.
             mstore(add(freeMemoryPointer, 36), amount) // Append the "amount" argument. Masking not required as it's a full 32 byte type.
 
             // We use 68 because the length of our calldata totals up like so: 4 + 32 * 2.
@@ -105,7 +105,7 @@ library SafeTransferLib {
 
             // Write the abi-encoded calldata into memory, beginning with the function selector.
             mstore(freeMemoryPointer, 0x095ea7b300000000000000000000000000000000000000000000000000000000)
-            mstore(add(freeMemoryPointer, 4), and(to, 0xffffffffffffffffffffffffffffffffffffffff)) // Append and mask the "to" argument.
+            mstore(add(freeMemoryPointer, 4), to) // Append the "to" argument.
             mstore(add(freeMemoryPointer, 36), amount) // Append the "amount" argument. Masking not required as it's a full 32 byte type.
 
             // We use 68 because the length of our calldata totals up like so: 4 + 32 * 2.
