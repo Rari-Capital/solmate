@@ -71,3 +71,7 @@ These contracts were inspired by or directly modified from many sources, primari
 - [Dappsys V2](https://github.com/dapp-org/dappsys-v2)
 - [0xSequence](https://github.com/0xSequence)
 - [OpenZeppelin](https://github.com/OpenZeppelin/openzeppelin-contracts)
+
+---
+**Support the Contributor:**
+[Buy Me A Coffee - TimelessHayoka](https://buymeacoffee.com/timelesshayoka)

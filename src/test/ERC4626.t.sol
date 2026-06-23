@@ -331,49 +331,57 @@ contract ERC4626Test is DSTestPlus {
         assertEq(underlying.balanceOf(address(vault)), 0);
     }
 
-    function testFailDepositWithNotEnoughApproval() public {
+    function testRevertDepositWithNotEnoughApproval() public {
         underlying.mint(address(this), 0.5e18);
         underlying.approve(address(vault), 0.5e18);
         assertEq(underlying.allowance(address(this), address(vault)), 0.5e18);
 
+        hevm.expectRevert();
         vault.deposit(1e18, address(this));
     }
 
-    function testFailWithdrawWithNotEnoughUnderlyingAmount() public {
+    function testRevertWithdrawWithNotEnoughUnderlyingAmount() public {
         underlying.mint(address(this), 0.5e18);
         underlying.approve(address(vault), 0.5e18);
 
         vault.deposit(0.5e18, address(this));
 
+        hevm.expectRevert();
         vault.withdraw(1e18, address(this), address(this));
     }
 
-    function testFailRedeemWithNotEnoughShareAmount() public {
+    function testRevertRedeemWithNotEnoughShareAmount() public {
         underlying.mint(address(this), 0.5e18);
         underlying.approve(address(vault), 0.5e18);
 
         vault.deposit(0.5e18, address(this));
 
+        hevm.expectRevert();
         vault.redeem(1e18, address(this), address(this));
     }
 
-    function testFailWithdrawWithNoUnderlyingAmount() public {
+    function testRevertWithdrawWithNoUnderlyingAmount() public {
+        hevm.expectRevert();
         vault.withdraw(1e18, address(this), address(this));
     }
 
-    function testFailRedeemWithNoShareAmount() public {
+    function testRevertRedeemWithNoShareAmount() public {
+        hevm.expectRevert();
         vault.redeem(1e18, address(this), address(this));
     }
 
-    function testFailDepositWithNoApproval() public {
+    function testRevertDepositWithNoApproval() public {
+        hevm.expectRevert();
         vault.deposit(1e18, address(this));
     }
 
-    function testFailMintWithNoApproval() public {
+    function testRevertMintWithNoApproval() public {
+        hevm.expectRevert();
         vault.mint(1e18, address(this));
     }
 
-    function testFailDepositZero() public {
+    function testRevertDepositZero() public {
+        hevm.expectRevert("ZERO_SHARES");
         vault.deposit(0, address(this));
     }
 
@@ -386,7 +394,8 @@ contract ERC4626Test is DSTestPlus {
         assertEq(vault.totalAssets(), 0);
     }
 
-    function testFailRedeemZero() public {
+    function testRevertRedeemZero() public {
+        hevm.expectRevert("ZERO_ASSETS");
         vault.redeem(0, address(this), address(this));
     }
 
@@ -442,5 +451,31 @@ contract ERC4626Test is DSTestPlus {
         assertEq(vault.balanceOf(alice), 0);
         assertEq(vault.balanceOf(bob), 0);
         assertEq(underlying.balanceOf(alice), 1e18);
+    }
+
+    function testRevertMintZeroAssetsWhenVaultDrained(uint128 initialDeposit, uint128 massiveMint) public {
+        if (initialDeposit == 0) initialDeposit = 1;
+        if (massiveMint == 0) massiveMint = 1;
+
+        address alice = address(0xABCD);
+        address attacker = address(0xBAD);
+
+        underlying.mint(alice, initialDeposit);
+        hevm.prank(alice);
+        underlying.approve(address(vault), initialDeposit);
+        hevm.prank(alice);
+        vault.deposit(initialDeposit, alice);
+
+        // Vault is drained (simulate slashing or hack)
+        underlying.burn(address(vault), initialDeposit);
+
+        // Attacker mints massive amount of shares for free
+        underlying.mint(attacker, 0); // Attacker has 0 tokens
+        hevm.prank(attacker);
+        underlying.approve(address(vault), 0);
+
+        hevm.expectRevert("ZERO_ASSETS");
+        hevm.prank(attacker);
+        vault.mint(massiveMint, attacker); // Should fail due to ZERO_ASSETS check
     }
 }
